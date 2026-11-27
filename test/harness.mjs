@@ -20,22 +20,32 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true
 const mockSdk = `
 import { atom } from 'nanostores'
 import { useStore } from '@nanostores/react'
-import { jsx } from 'react/jsx-runtime'
+import { jsx, jsxs } from 'react/jsx-runtime'
 export { atom }
 export const useValue = useStore
 export const APPROVAL_RESPOND_TIMEOUT_MS = 300000
 export const PALETTE_AREA = 'palette'
 export const MODEL_MENU_ROW_AREA = 'modelMenu.row'
 export const STATUSBAR_AREAS = { left: 'statusBar.left', right: 'statusBar.right' }
+export const COMPOSER_AREAS = { actions: 'composer.actions', top: 'composer.top', leading: 'composer.leading' }
+export const SESSION_ROW_AREAS = { leading: 'sessionRow.leading', trailing: 'sessionRow.trailing' }
 export const Codicon = ({ name }) => jsx('i', { 'data-codicon': name })
 export const Tip = ({ children }) => children
 export const Button = ({ children, onClick, disabled, ...rest }) => jsx('button', { onClick, disabled, 'aria-label': rest['aria-label'], children })
-export const ToggleRow = ({ label, checked, onChange }) => jsx('label', { children: [label, jsx('input', { type: 'checkbox', checked, onChange: e => onChange(e.target.checked) })] })
+export const ToggleRow = ({ label, checked, onChange }) => jsxs('label', { children: [label, jsx('input', { type: 'checkbox', checked, onChange: e => onChange(e.target.checked) })] })
 export const requests = (globalThis.__hsRequests = [])
 export const host = {
   state: {
     focusedSessionId: atom('s1'), model: (globalThis.__hsModel = atom('openrouter/anthropic/claude-opus-4.5')),
     busyBySession: (globalThis.__hsBusy = atom({}))
+  },
+  composer: {
+    insertText: async (sid, text) => { (globalThis.__hsDraft = (globalThis.__hsDraft || '') + text); return true },
+    getDraft: async sid => globalThis.__hsDraft || '',
+    setDraft: async (sid, text) => { globalThis.__hsDraft = text }
+  },
+  sessions: {
+    setColor: (sid, color) => { (globalThis.__hsSessionColors = globalThis.__hsSessionColors || {})[sid] = color }
   },
   request: async (method, params) => { requests.push({ method, params }); return {} },
   undismissPane: () => {}, revealPane: () => {}
@@ -102,6 +112,9 @@ plugin.register(ctx)
 const areas = registry.map(c => c.area)
 check('registers palette command', areas.includes('palette'))
 check('registers status-bar chip', areas.includes('statusBar.right'))
+check('registers reasoning chip', registry.some(c => c.id === 'reasoning-chip'))
+check('registers prompt enhance action', registry.some(c => c.id === 'prompt-enhance'))
+check('registers session row trailing', registry.some(c => c.id === 'session-row-color'))
 check('registers model-menu decorator', areas.includes('modelMenu.row'))
 check('registers settings page', areas.includes('settings'))
 check('pane not registered while closed', !areas.includes('panes'))
@@ -168,9 +181,16 @@ check('sub-agent row', text.includes('Survey theme repos') && text.includes('dee
 check('approval card visible', text.includes('Approval needed') && text.includes('rm -rf build'))
 check('logos rendered as <img data:svg>', container.querySelectorAll('img.hs-logo[src^="data:image/svg+xml"]').length >= 4,
   `${container.querySelectorAll('img.hs-logo').length} logos`)
-
-// 5. Approval without Hermes' card on screen → approval.respond
 const requests = globalThis.__hsRequests
+const stepBreakBtn = container.querySelector('button.hs-step-break')
+check('running step has break button', !!stepBreakBtn)
+if (stepBreakBtn) {
+  await act(async () => { stepBreakBtn.click(); await new Promise(r => setTimeout(r, 10)) })
+  check('break button sends session.interrupt', requests.some(r => r.method === 'session.interrupt' && r.params.session_id === 's1'))
+}
+const stats = mod.__internals.statsFor('s1')
+check('cumulative turn and step counters track work', stats.turns >= 1 && stats.steps >= 4, `${stats.turns} turns, ${stats.steps} steps`)
+// 5. Approval without Hermes' card on screen → approval.respond
 const allow = [...container.querySelectorAll('button')].find(b => b.textContent === 'Allow once')
 await act(async () => { allow.click(); await new Promise(r => setTimeout(r, 10)) })
 check('Allow once → approval.respond {choice:once}', requests.some(r => r.method === 'approval.respond' && r.params.choice === 'once' && r.params.request_id === 'p1'))
@@ -262,6 +282,54 @@ await act(async () => { globalThis.__hsModel.set('auto/other'); await new Promis
 check('chip: provider of a different model is not borrowed', !chipLogo())
 await act(async () => chipRoot.unmount())
 chipBox.remove()
+
+// 8e. Phase 1 Features: ReasoningChip, PromptEnhanceAction, SessionRowTrailing
+const reasChipContrib = registry.find(c => c.id === 'reasoning-chip')
+const reasBox = document.createElement('div')
+document.body.appendChild(reasBox)
+const reasRoot = createRoot(reasBox)
+await act(async () => reasRoot.render(reasChipContrib.render()))
+const reasBtn = reasBox.querySelector('button.hs-reasoning-btn')
+check('reasoning chip renders', !!reasBtn)
+if (reasBtn) {
+  await act(async () => { reasBtn.click(); await new Promise(r => setTimeout(r, 10)) })
+  check('reasoning chip cycle sends config.set', requests.some(r => r.method === 'config.set' && r.params.key === 'reasoning'))
+}
+await act(async () => reasRoot.unmount())
+reasBox.remove()
+
+const promptContrib = registry.find(c => c.id === 'prompt-enhance')
+const promptBox = document.createElement('div')
+document.body.appendChild(promptBox)
+const promptRoot = createRoot(promptBox)
+await act(async () => promptRoot.render(promptContrib.render()))
+const promptBtn = promptBox.querySelector('button.hs-prompt-trigger')
+check('prompt enhance trigger renders', !!promptBtn)
+if (promptBtn) {
+  await act(async () => { promptBtn.click(); await new Promise(r => setTimeout(r, 10)) })
+  const templateItem = promptBox.querySelector('button.hs-prompt-item')
+  check('prompt enhance popover opens with templates', !!templateItem)
+  if (templateItem) {
+    await act(async () => { templateItem.click(); await new Promise(r => setTimeout(r, 10)) })
+    check('prompt template prepends text to composer draft', (globalThis.__hsDraft || '').length > 0)
+  }
+}
+await act(async () => promptRoot.unmount())
+promptBox.remove()
+
+const sessionRowContrib = registry.find(c => c.id === 'session-row-color')
+const sessionBox = document.createElement('div')
+document.body.appendChild(sessionBox)
+const sessionRoot = createRoot(sessionBox)
+await act(async () => sessionRoot.render(sessionRowContrib.render({ sessionId: 's1' })))
+const sessionDotBtn = sessionBox.querySelector('button.hs-session-dot-btn')
+check('session row color dot renders', !!sessionDotBtn)
+if (sessionDotBtn) {
+  await act(async () => { sessionDotBtn.click(); await new Promise(r => setTimeout(r, 10)) })
+  check('session color cycle sets color', !!(globalThis.__hsSessionColors?.s1 || storage.get('sessionColors')?.s1))
+}
+await act(async () => sessionRoot.unmount())
+sessionBox.remove()
 
 // 9. Row decorator on a Hermes-shaped tool row
 const row = document.createElement('div')

@@ -6,6 +6,16 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.1.0/), da
 
 ## [Unreleased]
 
+### Added
+
+- **Iteration Budget Meter**: akumulasi jumlah turn dan step dihitung per sesi (`N turns · M steps`), ditampilkan pada header Agent Panel dan tooltip model chip di status bar.
+- **Reasoning Effort Switch**: chip di status bar kanan (`STATUSBAR_AREAS.right`) untuk mengganti tingkat pemikiran model (*none*, *low*, *med*, *high*) per sesi chat secara instan lewat satu klik.
+- **Intelligent Tool Break & Stalled Indicator**: tombol interupsi darurat pada baris step yang sedang `running` di Agent Panel (mengirim `session.interrupt`), serta status visual `stalled` jika tool berjalan lebih dari 15 detik.
+- **Better Session Appearance**: tombol dot warna interaktif pada baris sesi di sidebar (`SESSION_ROW_AREAS.trailing`) untuk mengelompokkan atau menandai percakapan secara visual.
+- **Scroll on Session Switch**: otomatis menggeser tampilan transcript ke pesan paling baru saat berpindah tab sesi percakapan.
+- **Prompt Enhancement Action**: tombol template prompt di kotak pesan composer (`COMPOSER_AREAS.actions`) dengan menu cepat (*Review Code*, *Explain Step-by-Step*, *Write Tests*, *Refactor Cleanly*).
+- Toggle pengaturan baru di **Settings > Plugins > Herald Styx UI** untuk mengaktifkan atau menonaktifkan masing-masing fitur baru di atas.
+
 ## [0.1.0] - 2026-11-27
 
 Rilis pertama. Plugin Hermes Desktop untuk logo model dan service, serta agent panel yang menampilkan kerja agent secara live, tanpa mengubah tema, warna, atau layout.

@@ -21,9 +21,11 @@ import {
   atom,
   Button,
   Codicon,
+  COMPOSER_AREAS,
   host,
   MODEL_MENU_ROW_AREA,
   PALETTE_AREA,
+  SESSION_ROW_AREAS,
   STATUSBAR_AREAS,
   Tip,
   ToggleRow,
@@ -133,6 +135,22 @@ const IDLE_GRACE_MS = 8000
 const $version = atom(0)
 const traces = new Map()
 /** Last session.info model/provider per session, for the status-bar chip. */
+/** Cumulative stats per session: turns, steps. */
+const sessionStats = new Map()
+/** Last known reasoning effort per session. */
+const sessionReasoning = new Map()
+/** Custom icon/color marks per session. */
+const sessionMarks = new Map()
+
+export function statsFor(sessionId) {
+  let s = sessionStats.get(sessionId)
+  if (!s) {
+    s = { turns: 0, steps: 0 }
+    sessionStats.set(sessionId, s)
+    while (sessionStats.size > MAX_SESSIONS) sessionStats.delete(sessionStats.keys().next().value)
+  }
+  return s
+}
 const sessionInfo = new Map()
 
 function newTrace() {
@@ -243,6 +261,7 @@ export function applyEvent(event) {
       Object.assign(trace, newTrace())
       keepSubagents.forEach(s => trace.subagents.set(s.id, s))
       trace.startedAt = Date.now()
+      statsFor(sid).turns += 1
     }
     trace.running = true
     return true
@@ -265,7 +284,9 @@ export function applyEvent(event) {
     // end: plugins hear events before Hermes fences stale snapshots.
     const prev = sessionInfo.get(sid)
     const next = { model: p.model || prev?.model || '', provider: p.provider || prev?.provider || '' }
-    if ((!next.model && !next.provider) || (next.model === prev?.model && next.provider === prev?.provider)) return false
+    const reas = p.reasoning_effort || p.reasoning
+    if (reas) sessionReasoning.set(sid, reas)
+    if ((!next.model && !next.provider) || (next.model === prev?.model && next.provider === prev?.provider)) return !!reas
     sessionInfo.delete(sid)
     sessionInfo.set(sid, next)
     while (sessionInfo.size > MAX_SESSIONS) sessionInfo.delete(sessionInfo.keys().next().value)
@@ -278,7 +299,9 @@ export function applyEvent(event) {
       trace.running = true
       trace.startedAt ||= Date.now()
     }
-    stepsFromStart(p).forEach(step => pushStep(trace, step))
+    const started = stepsFromStart(p)
+    started.forEach(step => pushStep(trace, step))
+    statsFor(sid).steps += started.length
     collectSources(trace, p.args)
     return true
   }
@@ -378,7 +401,7 @@ function normaliseTodos(list) {
 }
 
 // For the test harness and the console: window.__heraldStyx.traces
-export const __internals = { traces, applyEvent, modelLogo, serviceLogo, hostLogo, resultFailed, pillModel }
+export const __internals = { traces, applyEvent, modelLogo, serviceLogo, hostLogo, resultFailed, pillModel, sessionStats, sessionReasoning, sessionMarks, statsFor }
 
 // ── Formatting ──────────────────────────────────────────────────────────────
 
@@ -414,14 +437,21 @@ function Section({ title, count, children }) {
   })
 }
 
-function StepRow({ step }) {
+function StepRow({ step, sessionId }) {
   const running = step.status === 'running'
   const elapsed = running ? (Date.now() - step.startedAt) / 1000 : step.duration
+  const stalled = running && elapsed > 15
   const icon = step.kind === 'thinking'
     ? jsx(Codicon, { 'aria-hidden': true, className: 'hs-glyph', name: 'lightbulb', size: '14px' })
     : jsx(Logo, { entry: step.logo, fallback: FAMILY_ICON[step.family] ?? 'tools' })
+
+  const onBreak = e => {
+    e.stopPropagation()
+    if (sessionId) host.request('session.interrupt', { session_id: sessionId }).catch(() => {})
+  }
+
   return jsxs('li', {
-    className: 'hs-step',
+    className: `hs-step${stalled ? ' hs-stalled' : ''}`,
     'data-status': step.status,
     children: [
       jsx('span', { className: 'hs-step-icon', children: icon }),
@@ -435,7 +465,22 @@ function StepRow({ step }) {
       jsxs('span', {
         className: 'hs-step-meta',
         children: [
-          jsx('span', { className: 'hs-status', children: STATUS_TEXT[step.status] }),
+          jsxs('span', {
+            className: 'hs-status-wrap',
+            children: [
+              jsx('span', { className: 'hs-status', children: stalled ? 'stalled' : STATUS_TEXT[step.status] }),
+              running && jsx(Tip, {
+                label: 'Stop tool / break turn',
+                children: jsx('button', {
+                  className: 'hs-step-break',
+                  onClick: onBreak,
+                  'aria-label': 'Stop tool',
+                  type: 'button',
+                  children: jsx(Codicon, { 'aria-hidden': true, name: 'debug-stop', size: '11px' })
+                })
+              })
+            ]
+          }),
           jsx('span', { className: 'hs-time', children: formatDuration(elapsed) })
         ]
       })
@@ -509,11 +554,17 @@ function AgentPanel({ onClose }) {
           jsx('span', { className: 'hs-title', children: 'Agent' }),
           trace && jsx('span', {
             className: 'hs-sub',
-            children: trace.running
-              ? `Working for ${formatDuration((Date.now() - trace.startedAt) / 1000)}`
-              : trace.endedAt
-                ? `Worked for ${formatDuration((trace.endedAt - trace.startedAt) / 1000)}${trace.outcome && trace.outcome !== 'complete' ? ` · ${trace.outcome}` : ''}`
+            children: (() => {
+              const stats = sessionId ? statsFor(sessionId) : { turns: 0, steps: 0 }
+              const iter = (stats.turns > 0 || stats.steps > 0)
+                ? ` · ${stats.turns} turn${stats.turns === 1 ? '' : 's'} · ${stats.steps} step${stats.steps === 1 ? '' : 's'}`
                 : ''
+              return trace.running
+                ? `Working for ${formatDuration((Date.now() - trace.startedAt) / 1000)}${iter}`
+                : trace.endedAt
+                  ? `Worked for ${formatDuration((trace.endedAt - trace.startedAt) / 1000)}${iter}${trace.outcome && trace.outcome !== 'complete' ? ` · ${trace.outcome}` : ''}`
+                  : ''
+            })()
           })
         ]
       }),
@@ -630,7 +681,7 @@ function AgentPanel({ onClose }) {
                   disabled: showAll && trace.dropped > 0 && trace.steps.length === steps.length,
                   children: showAll ? `${trace.dropped} oldest steps not kept` : `Show ${hidden} earlier steps`
                 }),
-                jsx('ol', { className: 'hs-steps', 'aria-live': 'polite', children: steps.map(step => jsx(StepRow, { step }, step.key)) })
+                jsx('ol', { className: 'hs-steps', 'aria-live': 'polite', children: steps.map(step => jsx(StepRow, { step, sessionId }, step.key)) })
               ]
             })
           })
@@ -661,6 +712,135 @@ function ModelChip({ prefs, onToggle }) {
       type: 'button',
       children: [jsx(Logo, { entry, fallback: 'sparkle', size: 12 }), jsx('span', { children: short })]
     })
+  })
+}
+
+const REASONING_LEVELS = ['none', 'low', 'medium', 'high']
+const REASONING_LABELS = { none: 'None', low: 'Low', medium: 'Med', high: 'High' }
+
+function ReasoningChip({ prefs }) {
+  useValue($version)
+  const sessionId = useValue(host.state.focusedSessionId)
+  const { reasoningSwitch } = useValue(prefs)
+  if (!reasoningSwitch || !sessionId) return null
+
+  const raw = sessionReasoning.get(sessionId) || 'medium'
+  const level = REASONING_LEVELS.includes(raw) ? raw : 'medium'
+
+  const next = e => {
+    e.stopPropagation()
+    const idx = REASONING_LEVELS.indexOf(level)
+    const nextLevel = REASONING_LEVELS[(idx + 1) % REASONING_LEVELS.length]
+    sessionReasoning.set(sessionId, nextLevel)
+    $version.set($version.get() + 1)
+    host.request('config.set', { key: 'reasoning', session_id: sessionId, value: nextLevel }).catch(() => {})
+  }
+
+  return jsx(Tip, {
+    label: `Reasoning effort: ${REASONING_LABELS[level] ?? level} · click to cycle`,
+    children: jsxs('button', {
+      className: 'hs-chip-btn hs-reasoning-btn',
+      onClick: next,
+      type: 'button',
+      'aria-label': `Reasoning: ${REASONING_LABELS[level]}`,
+      children: [
+        jsx(Codicon, { 'aria-hidden': true, name: 'symbol-misc', size: '12px' }),
+        jsx('span', { children: REASONING_LABELS[level] ?? level })
+      ]
+    })
+  })
+}
+
+const SWATCH_PALETTE = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
+
+function SessionRowTrailing({ sessionId, storage }) {
+  useValue($version)
+  const colors = storage.get('sessionColors', {})
+  const color = colors[sessionId] || null
+
+  const cycle = e => {
+    e.stopPropagation()
+    const nextColors = { ...storage.get('sessionColors', {}) }
+    const currentIdx = color ? SWATCH_PALETTE.indexOf(color) : -1
+    const nextColor = currentIdx + 1 < SWATCH_PALETTE.length ? SWATCH_PALETTE[currentIdx + 1] : null
+    if (nextColor) nextColors[sessionId] = nextColor
+    else delete nextColors[sessionId]
+    storage.set('sessionColors', nextColors)
+    if (typeof host.sessions?.setColor === 'function') {
+      host.sessions.setColor(sessionId, nextColor)
+    }
+    $version.set($version.get() + 1)
+  }
+
+  return jsx(Tip, {
+    label: color ? `Session color: ${color} · click to change` : 'Set session color',
+    children: jsx('button', {
+      type: 'button',
+      className: 'hs-session-dot-btn',
+      onClick: cycle,
+      'aria-label': 'Set session color',
+      children: jsx('span', {
+        className: 'hs-session-dot',
+        style: { backgroundColor: color || 'transparent' }
+      })
+    })
+  })
+}
+
+const PROMPT_TEMPLATES = [
+  { id: 'review', label: 'Review Code', prefix: 'Review this code for bugs, edge cases, and performance bottlenecks:\n\n' },
+  { id: 'explain', label: 'Explain Step-by-Step', prefix: 'Explain how this works step-by-step with architecture and trade-offs:\n\n' },
+  { id: 'test', label: 'Write Tests', prefix: 'Write comprehensive regression tests covering edge cases for:\n\n' },
+  { id: 'refactor', label: 'Refactor Cleanly', prefix: 'Refactor this code to improve clarity, remove duplication, and keep maintainability:\n\n' }
+]
+
+function PromptEnhanceAction({ prefs }) {
+  useValue($version)
+  const { promptEnhance } = useValue(prefs)
+  const [open, setOpen] = useState(false)
+  if (!promptEnhance) return null
+
+  const apply = tmpl => {
+    setOpen(false)
+    const sid = host.state.focusedSessionId?.get?.()
+    if (host.composer?.insertText) {
+      host.composer.insertText(sid, tmpl.prefix, { mode: 'prefix' })
+      return
+    }
+    const textarea = document.querySelector('[data-slot="composer-root"] textarea, [data-slot="composer-root"] [contenteditable="true"]')
+    if (textarea) {
+      if (textarea.tagName === 'TEXTAREA') {
+        textarea.value = tmpl.prefix + textarea.value
+        textarea.dispatchEvent(new Event('input', { bubbles: true }))
+      } else {
+        textarea.textContent = tmpl.prefix + textarea.textContent
+      }
+    }
+  }
+
+  return jsxs('div', {
+    className: 'hs-prompt-wrap',
+    children: [
+      jsx(Tip, {
+        label: 'Prompt templates (Enhance)',
+        children: jsx('button', {
+          type: 'button',
+          className: 'hs-chip-btn hs-prompt-trigger',
+          onClick: () => setOpen(!open),
+          'aria-label': 'Prompt templates',
+          children: jsx(Codicon, { 'aria-hidden': true, name: 'sparkle', size: '13px' })
+        })
+      }),
+      open && jsxs('div', {
+        className: 'hs-prompt-popover',
+        children: PROMPT_TEMPLATES.map(t => jsx('button', {
+          type: 'button',
+          className: 'hs-prompt-item',
+          onClick: () => apply(t),
+          children: t.label
+        }, t.id))
+      })
+    ]
   })
 }
 
@@ -792,6 +972,18 @@ function startPillDecorator() {
   }
 }
 
+function startScrollOnSwitch() {
+  const snap = el => {
+    if (el) el.scrollTop = el.scrollHeight
+  }
+  const check = () => {
+    document.querySelectorAll('[data-slot="aui_thread-viewport"]').forEach(el => {
+      if (!el.closest('[data-pane-hidden]')) snap(el)
+    })
+  }
+  return watchDom(check)
+}
+
 // ── Styles (theme variables only) ───────────────────────────────────────────
 
 const STYLES = `
@@ -838,11 +1030,30 @@ const STYLES = `
 .hs-chip-btn:hover{color:var(--ui-text-primary);background:var(--chrome-action-hover)}
 .hs-chip-btn:focus-visible{outline:2px solid var(--ui-accent,currentColor);outline-offset:-2px}
 .hs-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.hs-status-wrap{display:inline-flex;align-items:center;gap:4px}
+.hs-step-break{display:inline-flex;align-items:center;justify-content:center;padding:1px;border:0;border-radius:3px;background:none;color:var(--ui-text-tertiary);cursor:pointer}
+.hs-step-break:hover{color:var(--ui-red,var(--ui-text-primary));background:var(--chrome-action-hover)}
+.hs-step.hs-stalled .hs-status{color:var(--ui-warning,#f59e0b);font-weight:600}
+.hs-session-dot-btn{display:inline-flex;align-items:center;justify-content:center;padding:2px;border:0;background:none;cursor:pointer}
+.hs-session-dot{width:8px;height:8px;border-radius:50%;border:1px solid var(--ui-stroke-secondary);display:inline-block}
+.hs-prompt-wrap{position:relative;display:inline-flex;align-items:center}
+.hs-prompt-popover{position:absolute;bottom:100%;right:0;margin-bottom:4px;display:flex;flex-direction:column;gap:1px;padding:4px;background:var(--ui-bg-elevated,var(--ui-bg-input,#202020));border:1px solid var(--ui-stroke-tertiary);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.25);z-index:100;min-width:160px}
+.hs-prompt-item{display:flex;align-items:center;padding:4px 8px;font-size:11px;color:var(--ui-text-primary);background:none;border:0;border-radius:4px;text-align:left;cursor:pointer}
+.hs-prompt-item:hover{background:var(--chrome-action-hover)}
 `
 
 // ── Plugin ──────────────────────────────────────────────────────────────────
 
-const DEFAULT_PREFS = { panelOpen: false, showChip: true, rowLogos: true, pillLogo: true }
+const DEFAULT_PREFS = {
+  panelOpen: false,
+  showChip: true,
+  rowLogos: true,
+  pillLogo: true,
+  reasoningSwitch: true,
+  scrollOnSwitch: true,
+  promptEnhance: true,
+  sessionAppearance: true
+}
 
 export default {
   id: ID,
@@ -958,6 +1169,30 @@ export default {
     })
 
     ctx.register({
+      id: 'reasoning-chip',
+      area: STATUSBAR_AREAS.right,
+      order: 115,
+      render: () => jsx(ReasoningChip, { prefs })
+    })
+
+    if (COMPOSER_AREAS?.actions) {
+      ctx.register({
+        id: 'prompt-enhance',
+        area: COMPOSER_AREAS.actions,
+        order: 85,
+        render: () => jsx(PromptEnhanceAction, { prefs })
+      })
+    }
+
+    if (SESSION_ROW_AREAS?.trailing) {
+      ctx.register({
+        id: 'session-row-color',
+        area: SESSION_ROW_AREAS.trailing,
+        render: ({ sessionId }) => (prefs.get().sessionAppearance ? jsx(SessionRowTrailing, { sessionId, storage: ctx.storage }) : null)
+      })
+    }
+
+    ctx.register({
       id: 'model-menu-logos',
       area: MODEL_MENU_ROW_AREA,
       data: {
@@ -970,7 +1205,8 @@ export default {
 
     const decorators = [
       { pref: 'rowLogos', start: startRowDecorator, stop: null },
-      { pref: 'pillLogo', start: startPillDecorator, stop: null }
+      { pref: 'pillLogo', start: startPillDecorator, stop: null },
+      { pref: 'scrollOnSwitch', start: startScrollOnSwitch, stop: null }
     ]
     const syncDecorators = () => {
       for (const d of decorators) {
@@ -998,22 +1234,42 @@ export default {
               checked: p.panelOpen, label: 'Agent panel',
               description: 'Right-hand pane with the focused chat\'s steps, plan, sources, sub-agents and approvals.',
               onChange: setOpen
-            }),
+            }, 'panelOpen'),
             jsx(ToggleRow, {
               checked: p.showChip, label: 'Model chip in the status bar',
               description: 'Logo and name of the model in use. Click it to toggle the agent panel.',
               onChange: on => update({ showChip: on })
-            }),
+            }, 'showChip'),
+            jsx(ToggleRow, {
+              checked: p.reasoningSwitch, label: 'Reasoning effort switch in status bar',
+              description: 'Cycles reasoning effort (none, low, med, high) per session with one click from the status bar.',
+              onChange: on => update({ reasoningSwitch: on })
+            }, 'reasoningSwitch'),
+            jsx(ToggleRow, {
+              checked: p.scrollOnSwitch, label: 'Scroll on session switch',
+              description: 'Automatically snaps transcript scroll to the newest message when switching to a session tab.',
+              onChange: on => update({ scrollOnSwitch: on })
+            }, 'scrollOnSwitch'),
+            jsx(ToggleRow, {
+              checked: p.promptEnhance, label: 'Prompt enhancement templates',
+              description: 'Adds quick task templates (explain, review, test, refactor) to the chat composer.',
+              onChange: on => update({ promptEnhance: on })
+            }, 'promptEnhance'),
+            jsx(ToggleRow, {
+              checked: p.sessionAppearance, label: 'Session color tags in sidebar',
+              description: 'Clickable color dot on session rows in the sidebar to organize sessions visually.',
+              onChange: on => update({ sessionAppearance: on })
+            }, 'sessionAppearance'),
             jsx(ToggleRow, {
               checked: p.pillLogo, label: 'Logo on the composer model pill',
               description: 'Shows the model\'s logo beside its name in each chat\'s composer. Reads the pill\'s label, so a Hermes update that changes it can hide the logo.',
               onChange: on => update({ pillLogo: on })
-            }),
+            }, 'pillLogo'),
             jsx(ToggleRow, {
               checked: p.rowLogos, label: 'Logos on chat tool rows',
               description: 'Replaces the generic icon on tool rows that belong to a known service. Reads the row title, so it can miss a tool Hermes labels differently.',
               onChange: on => update({ rowLogos: on })
-            })
+            }, 'rowLogos')
           ]
         })
       }
