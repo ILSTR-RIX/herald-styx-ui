@@ -1,5 +1,3 @@
-> Ringkasan: proyek ini memakai Contributor Covenant 2.1. Hormati semua orang, tanpa pelecehan atau serangan pribadi. Laporan pelanggaran dikirim secara privat ke pemelihara di bawah. Teks resmi dalam Bahasa Inggris berlaku sebagai acuan; terjemahan Bahasa Indonesia tersedia di https://www.contributor-covenant.org/translations.
-
 # Contributor Covenant Code of Conduct
 
 ## Our Pledge
@@ -83,3 +81,7 @@ For answers to common questions about this code of conduct, see the FAQ at [http
 [Mozilla CoC]: https://github.com/mozilla/diversity
 [FAQ]: https://www.contributor-covenant.org/faq
 [translations]: https://www.contributor-covenant.org/translations
+
+---
+
+*Ringkasan (Bahasa Indonesia): proyek ini memakai Contributor Covenant 2.1. Hormati semua orang, tanpa pelecehan atau serangan pribadi. Laporan pelanggaran dikirim secara privat ke pemelihara di atas. Teks resmi dalam Bahasa Inggris berlaku sebagai acuan; terjemahan resmi Bahasa Indonesia tersedia di [Contributor Covenant Translations][translations].*
