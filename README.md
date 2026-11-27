@@ -64,6 +64,8 @@ Plugin ini dulu bernama Agent Lens (folder `agent-lens`). Hapus folder `desktop-
 
 ## Menambah logo
 
+Panduan lengkap, termasuk cara memilih alias dan checklist pull request, ada di [CONTRIBUTING.md](CONTRIBUTING.md).
+
 1. Tambahkan satu baris ke `logos.config.json`: `[id, [substring yang dicocokkan], "lobe:<name>" | "si:<slug>", "#warna"]`.
    - Ikon `lobe:` berasal dari [@lobehub/icons-static-svg](https://lobehub.com/icons) (model)
    - Ikon `si:` berasal dari [simple-icons](https://simpleicons.org) (service)
@@ -111,6 +113,10 @@ node scripts/build.mjs && node test/harness.mjs
 Harness memuat `dist/plugin.js` dengan mock SDK, me-render React tree yang asli di jsdom, dan memutar satu turn berisi event yang bentuknya mengikuti gateway contract hasil generate Hermes. Cakupannya: pencocokan logo dan host, deteksi kegagalan, bridged call, plan, sources, sub-agent, approval dengan dan tanpa card Hermes di layar (termasuk urutan tombol yang berubah), akhir turn lewat `message.error`, `session.reclaimed`, dan idle dari `busyBySession`, provider untuk chip status bar, logo di model pill composer (termasuk label lokal, pergantian model, dan toggle Settings), isolasi session, logo di chat row, serta unload yang bersih.
 
 Diperiksa terhadap source Hermes desktop di `/opt/hermes` (SDK `@hermes/plugin-sdk`, React 19.3).
+
+## Berkontribusi
+
+Kontribusi diterima, terutama logo baru. Lihat [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Changelog
 
