@@ -112,6 +112,10 @@ Harness memuat `dist/plugin.js` dengan mock SDK, me-render React tree yang asli 
 
 Diperiksa terhadap source Hermes desktop di `/opt/hermes` (SDK `@hermes/plugin-sdk`, React 19.3).
 
+## Changelog
+
+Riwayat perubahan per versi ada di [CHANGELOG.md](CHANGELOG.md).
+
 ## Lisensi
 
 Kode plugin berlisensi MIT, lihat [LICENSE](LICENSE). Software ini disediakan **"AS IS", tanpa garansi apa pun**, baik tersurat maupun tersirat; penulis tidak bertanggung jawab atas klaim, kerusakan, atau kewajiban apa pun yang timbul dari penggunaannya.
