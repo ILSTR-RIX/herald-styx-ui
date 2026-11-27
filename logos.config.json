@@ -80,7 +80,7 @@
     "web":        ["web_extract", "web_fetch", "browser", "computer_use"],
     "search":     ["web_search", "search"],
     "code":       ["execute_code"],
-    "delegation": ["delegate_task", "message_agent"],
+    "delegation": ["delegate_task", "message_agent", "jev_route"],
     "memory":     ["memory", "session_search"],
     "skills":     ["skill_manage", "skill_view", "skills_list"],
     "todo":       ["todo", "todo_list"],
