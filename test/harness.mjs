@@ -29,6 +29,7 @@ export const MODEL_MENU_ROW_AREA = 'modelMenu.row'
 export const STATUSBAR_AREAS = { left: 'statusBar.left', right: 'statusBar.right' }
 export const COMPOSER_AREAS = { actions: 'composer.actions', top: 'composer.top', leading: 'composer.leading' }
 export const SESSION_ROW_AREAS = { leading: 'sessionRow.leading', trailing: 'sessionRow.trailing' }
+export const TRANSCRIPT_DIRECTIVE_AREA = 'transcript.directives'
 export const Codicon = ({ name }) => jsx('i', { 'data-codicon': name })
 export const Tip = ({ children }) => children
 export const Button = ({ children, onClick, disabled, ...rest }) => jsx('button', { onClick, disabled, 'aria-label': rest['aria-label'], children })
@@ -329,6 +330,43 @@ if (sessionDotBtn) {
   check('session color cycle sets color', !!(globalThis.__hsSessionColors?.s1 || storage.get('sessionColors')?.s1))
 }
 await act(async () => sessionRoot.unmount())
+
+// 8h. GenUI Directives: Chart, KPI, Table, Calculator, Explainer
+const directiveNames = registry.filter(c => c.area === 'transcript.directives').map(c => c.data?.name)
+check('registers chart directive', directiveNames.includes('chart'))
+check('registers kpi directive', directiveNames.includes('kpi'))
+check('registers table directive', directiveNames.includes('table'))
+check('registers calc directive', directiveNames.includes('calc'))
+check('registers explainer directive', directiveNames.includes('explainer'))
+
+const chartContrib = registry.find(c => c.area === 'transcript.directives' && c.data.name === 'chart')
+const genuiBox = document.createElement('div')
+document.body.appendChild(genuiBox)
+const genuiRoot = createRoot(genuiBox)
+await act(async () => genuiRoot.render(chartContrib.data.render({ attrs: { title: 'Q3 Growth', data: 'A:10,B:25,C:40' }, sessionId: 's1' })))
+check('GenUI chart renders title and bars', genuiBox.textContent.includes('Q3 Growth') && genuiBox.querySelectorAll('.hs-genui-bar-row').length === 3)
+
+const kpiContrib = registry.find(c => c.area === 'transcript.directives' && c.data.name === 'kpi')
+await act(async () => genuiRoot.render(kpiContrib.data.render({ attrs: { label: 'MRR', value: '$45K', change: '+12%' }, sessionId: 's1' })))
+check('GenUI KPI renders label, value and change', genuiBox.textContent.includes('MRR') && genuiBox.textContent.includes('$45K') && genuiBox.textContent.includes('+12%'))
+
+const tableContrib = registry.find(c => c.area === 'transcript.directives' && c.data.name === 'table')
+await act(async () => genuiRoot.render(tableContrib.data.render({ attrs: { title: 'Pricing', headers: 'Plan, Price', rows: 'Basic, $10; Pro, $30' }, sessionId: 's1' })))
+check('GenUI table renders headers and rows', genuiBox.textContent.includes('Pricing') && genuiBox.textContent.includes('Basic') && genuiBox.textContent.includes('Pro'))
+
+const calcContrib = registry.find(c => c.area === 'transcript.directives' && c.data.name === 'calc')
+await act(async () => genuiRoot.render(calcContrib.data.render({ attrs: { title: 'ROI Calc', default: '50', rate: '2' }, sessionId: 's1' })))
+check('GenUI calculator renders slider and result', genuiBox.textContent.includes('ROI Calc') && genuiBox.textContent.includes('100'))
+
+const explainerContrib = registry.find(c => c.area === 'transcript.directives' && c.data.name === 'explainer')
+await act(async () => genuiRoot.render(explainerContrib.data.render({ attrs: { title: 'How It Works', steps: 'Step A; Step B' }, sessionId: 's1' })))
+check('GenUI explainer renders steps', genuiBox.textContent.includes('How It Works') && genuiBox.textContent.includes('Step A'))
+
+const artifacts = mod.__internals.sessionArtifacts.get('s1') || []
+check('GenUI components record artifacts for Agent Panel', artifacts.length >= 4, `${artifacts.length} artifacts recorded`)
+
+await act(async () => genuiRoot.unmount())
+genuiBox.remove()
 sessionBox.remove()
 
 // 9. Row decorator on a Hermes-shaped tool row

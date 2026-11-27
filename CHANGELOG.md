@@ -14,7 +14,15 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.1.0/), da
 - **Better Session Appearance**: tombol dot warna interaktif pada baris sesi di sidebar (`SESSION_ROW_AREAS.trailing`) untuk mengelompokkan atau menandai percakapan secara visual.
 - **Scroll on Session Switch**: otomatis menggeser tampilan transcript ke pesan paling baru saat berpindah tab sesi percakapan.
 - **Prompt Enhancement Action**: tombol template prompt di kotak pesan composer (`COMPOSER_AREAS.actions`) dengan menu cepat (*Review Code*, *Explain Step-by-Step*, *Write Tests*, *Refactor Cleanly*).
-- Toggle pengaturan baru di **Settings > Plugins > Herald Styx UI** untuk mengaktifkan atau menonaktifkan masing-masing fitur baru di atas.
+- **Interactive GenUI Directives**: dukungan rendering komponen visual interaktif kaya di dalam percakapan chat melalui `TRANSCRIPT_DIRECTIVE_AREA`:
+  - `::chart{type="..." data="..." title="..."}`: grafik bar & data visual interaktif dengan pewarnaan gain/loss.
+  - `::kpi{label="..." value="..." change="..."}`: kartu metrik KPI dengan indikator tren positif/negatif.
+  - `::table{headers="..." rows="..." title="..."}`: tabel data interaktif dengan fitur sortir kolom dinamis.
+  - `::calc{title="..." default="..." rate="..." unit="..."}`: simulasi kalkulator interaktif dengan slider langsung.
+  - `::explainer{title="..." steps="..."}`: panduan konsep atau alur bertahap (*step-by-step walkthrough*).
+- **Artifacts Inspector di Agent Panel**: seksi khusus pada panel samping untuk mencatat dan menginspeksi seluruh komponen visual atau dasbor yang dihasilkan agen pada sesi aktif.
+- **Keep in Dashboard / Pin Action**: tombol sematkan (*pin*) langsung pada kartu visual untuk menyimpannya sebagai dasbor penting.
+- Toggle pengaturan **Interactive GenUI blocks in chat** di halaman **Settings > Plugins > Herald Styx UI**.
 
 ## [0.1.0] - 2026-11-27
 

@@ -29,6 +29,7 @@ import {
   STATUSBAR_AREAS,
   Tip,
   ToggleRow,
+  TRANSCRIPT_DIRECTIVE_AREA,
   useValue
 } from '@hermes/plugin-sdk'
 import { useEffect, useState } from 'react'
@@ -141,6 +142,22 @@ const sessionStats = new Map()
 const sessionReasoning = new Map()
 /** Custom icon/color marks per session. */
 const sessionMarks = new Map()
+/** Detected GenUI artifacts per session: charts, tables, KPIs, calculators. */
+const sessionArtifacts = new Map()
+
+export function recordArtifact(sessionId, artifact) {
+  if (!sessionId || !artifact) return
+  let list = sessionArtifacts.get(sessionId)
+  if (!list) {
+    list = []
+    sessionArtifacts.set(sessionId, list)
+  }
+  if (!list.some(a => a.id === artifact.id)) {
+    list.push(artifact)
+    if (list.length > 20) list.shift()
+    $version.set($version.get() + 1)
+  }
+}
 
 export function statsFor(sessionId) {
   let s = sessionStats.get(sessionId)
@@ -400,8 +417,7 @@ function normaliseTodos(list) {
     .map(item => ({ id: String(item.id ?? item.content), content: String(item.content).trim(), status: item.status }))
 }
 
-// For the test harness and the console: window.__heraldStyx.traces
-export const __internals = { traces, applyEvent, modelLogo, serviceLogo, hostLogo, resultFailed, pillModel, sessionStats, sessionReasoning, sessionMarks, statsFor }
+export const __internals = { traces, applyEvent, modelLogo, serviceLogo, hostLogo, resultFailed, pillModel, sessionStats, sessionReasoning, sessionMarks, statsFor, sessionArtifacts, recordArtifact }
 
 // ── Formatting ──────────────────────────────────────────────────────────────
 
@@ -600,6 +616,7 @@ function AgentPanel({ onClose }) {
   const toolCount = trace.steps.filter(s => s.kind === 'tool').length
   const subagents = [...trace.subagents.values()]
   const sources = [...trace.sources.entries()]
+  const artifacts = sessionId ? sessionArtifacts.get(sessionId) || [] : []
 
   return jsxs('div', {
     className: 'hs-panel',
@@ -614,7 +631,6 @@ function AgentPanel({ onClose }) {
             title: 'Plan',
             count: `${trace.todos.filter(t => t.status === 'completed').length}/${trace.todos.length}`,
             children: jsx('ol', {
-              className: 'hs-todos',
               children: trace.todos.map(todo => jsxs('li', {
                 'data-status': todo.status,
                 children: [
@@ -626,9 +642,24 @@ function AgentPanel({ onClose }) {
             })
           }),
 
+          artifacts.length > 0 && jsx(Section, {
+            title: 'Artifacts',
+            count: artifacts.length,
+            children: jsx('ul', {
+              className: 'hs-steps hs-artifacts',
+              children: artifacts.map(art => jsxs('li', {
+                className: 'hs-step hs-artifact-row',
+                children: [
+                  jsx('span', { className: 'hs-step-icon', children: jsx(Codicon, { name: art.kind === 'chart' ? 'graph' : art.kind === 'table' ? 'table' : art.kind === 'calculator' ? 'calculator' : 'dashboard', size: '13px' }) }),
+                  jsx('span', { className: 'hs-step-body', children: jsx('span', { className: 'hs-step-title', children: art.title }) }),
+                  jsx('span', { className: 'hs-step-meta', children: jsx('span', { className: 'hs-status', children: art.kind }) })
+                ]
+              }, art.id))
+            })
+          }),
+
           (sources.length > 0 || trace.queries.length > 0) && jsx(Section, {
             title: 'Sources',
-            count: sources.length || null,
             children: jsxs('div', {
               className: 'hs-sources',
               children: [
@@ -844,6 +875,260 @@ function PromptEnhanceAction({ prefs }) {
   })
 }
 
+// ── GenUI Interactive Directives ────────────────────────────────────────────
+
+function parseChartData(str) {
+  return (str || '').split(',').map(pair => {
+    const [k, v] = pair.split(':')
+    return { label: (k || '').trim(), value: parseFloat(v) || 0 }
+  }).filter(d => d.label && !isNaN(d.value))
+}
+
+function GenUIChart({ attrs, sessionId }) {
+  const title = attrs?.title || 'Metric Chart'
+  const data = parseChartData(attrs?.data)
+  const [pinned, setPinned] = useState(false)
+
+  useEffect(() => {
+    if (sessionId) recordArtifact(sessionId, { id: `chart-${title}`, kind: 'chart', title })
+  }, [sessionId, title])
+
+  const maxVal = Math.max(...data.map(d => d.value), 1)
+
+  const keep = () => {
+    setPinned(!pinned)
+    if (typeof host.sessions?.pin === 'function' && sessionId) host.sessions.pin(sessionId)
+  }
+
+  return jsxs('div', {
+    className: 'hs-genui-card hs-genui-chart',
+    children: [
+      jsxs('div', {
+        className: 'hs-genui-head',
+        children: [
+          jsxs('div', { className: 'hs-genui-title-wrap', children: [jsx(Codicon, { name: 'graph', size: '14px' }), jsx('span', { className: 'hs-genui-title', children: title })] }),
+          jsx('button', {
+            type: 'button',
+            className: `hs-genui-pin-btn${pinned ? ' hs-active' : ''}`,
+            onClick: keep,
+            title: pinned ? 'Kept in dashboard' : 'Keep in dashboard',
+            children: jsx(Codicon, { name: pinned ? 'pin' : 'pinned', size: '12px' })
+          })
+        ]
+      }),
+      data.length > 0 ? jsxs('div', {
+        className: 'hs-genui-bars',
+        children: data.map(d => jsxs('div', {
+          className: 'hs-genui-bar-row',
+          children: [
+            jsx('span', { className: 'hs-genui-bar-label', children: d.label }),
+            jsx('div', {
+              className: 'hs-genui-bar-track',
+              children: jsx('div', {
+                className: 'hs-genui-bar-fill',
+                style: { width: `${Math.min(100, Math.round((d.value / maxVal) * 100))}%` }
+              })
+            }),
+            jsx('span', { className: 'hs-genui-bar-val', children: String(d.value) })
+          ]
+        }, d.label))
+      }) : jsx('p', { className: 'hs-hint', children: 'No data points provided.' })
+    ]
+  })
+}
+
+function GenUIKpi({ attrs, sessionId }) {
+  const label = attrs?.label || 'Metric'
+  const value = attrs?.value || '0'
+  const change = attrs?.change || null
+  const isPositive = change && !change.startsWith('-')
+
+  useEffect(() => {
+    if (sessionId) recordArtifact(sessionId, { id: `kpi-${label}`, kind: 'kpi', title: `${label}: ${value}` })
+  }, [sessionId, label, value])
+
+  return jsxs('div', {
+    className: 'hs-genui-card hs-genui-kpi',
+    children: [
+      jsx('span', { className: 'hs-genui-kpi-label', children: label }),
+      jsxs('div', {
+        className: 'hs-genui-kpi-val-row',
+        children: [
+          jsx('span', { className: 'hs-genui-kpi-val', children: value }),
+          change && jsx('span', {
+            className: `hs-genui-kpi-change ${isPositive ? 'hs-pos' : 'hs-neg'}`,
+            children: `${isPositive ? '▲ ' : '▼ '}${change}`
+          })
+        ]
+      })
+    ]
+  })
+}
+
+function GenUITable({ attrs, sessionId }) {
+  const title = attrs?.title || 'Data Table'
+  const headers = (attrs?.headers || '').split(',').map(h => h.trim()).filter(Boolean)
+  const rows = (attrs?.rows || '').split(';').map(r => r.split(',').map(c => c.trim())).filter(r => r.length > 0 && r[0])
+  const [sortCol, setSortCol] = useState(0)
+  const [asc, setAsc] = useState(true)
+
+  useEffect(() => {
+    if (sessionId) recordArtifact(sessionId, { id: `table-${title}`, kind: 'table', title })
+  }, [sessionId, title])
+
+  const sorted = [...rows].sort((a, b) => {
+    const v1 = a[sortCol] ?? ''
+    const v2 = b[sortCol] ?? ''
+    const num1 = parseFloat(v1)
+    const num2 = parseFloat(v2)
+    if (!isNaN(num1) && !isNaN(num2)) return asc ? num1 - num2 : num2 - num1
+    return asc ? String(v1).localeCompare(String(v2)) : String(v2).localeCompare(String(v1))
+  })
+
+  const toggleSort = idx => {
+    if (sortCol === idx) setAsc(!asc)
+    else { setSortCol(idx); setAsc(true) }
+  }
+
+  return jsxs('div', {
+    className: 'hs-genui-card hs-genui-table-wrap',
+    children: [
+      jsxs('div', {
+        className: 'hs-genui-head',
+        children: [
+          jsx(Codicon, { name: 'table', size: '14px' }),
+          jsx('span', { className: 'hs-genui-title', children: title })
+        ]
+      }),
+      jsxs('table', {
+        className: 'hs-genui-table',
+        children: [
+          jsx('thead', {
+            children: jsx('tr', {
+              children: headers.map((h, i) => jsx('th', {
+                onClick: () => toggleSort(i),
+                className: 'hs-genui-th',
+                children: jsxs('span', {
+                  className: 'hs-th-inner',
+                  children: [h, sortCol === i ? (asc ? ' ↑' : ' ↓') : '']
+                })
+              }, i))
+            })
+          }),
+          jsx('tbody', {
+            children: sorted.map((row, rIdx) => jsx('tr', {
+              children: row.map((cell, cIdx) => jsx('td', { children: cell }, cIdx))
+            }, rIdx))
+          })
+        ]
+      })
+    ]
+  })
+}
+
+function GenUICalculator({ attrs, sessionId }) {
+  const title = attrs?.title || 'Interactive Calculator'
+  const min = parseFloat(attrs?.min) || 0
+  const max = parseFloat(attrs?.max) || 100
+  const step = parseFloat(attrs?.step) || 1
+  const unit = attrs?.unit || ''
+  const rate = parseFloat(attrs?.rate) || 1.2
+  const [val, setVal] = useState(parseFloat(attrs?.default) || (min + max) / 2)
+
+  useEffect(() => {
+    if (sessionId) recordArtifact(sessionId, { id: `calc-${title}`, kind: 'calculator', title })
+  }, [sessionId, title])
+
+  const result = Math.round(val * rate * 100) / 100
+
+  return jsxs('div', {
+    className: 'hs-genui-card hs-genui-calc',
+    children: [
+      jsxs('div', {
+        className: 'hs-genui-head',
+        children: [
+          jsx(Codicon, { name: 'calculator', size: '14px' }),
+          jsx('span', { className: 'hs-genui-title', children: title })
+        ]
+      }),
+      jsxs('div', {
+        className: 'hs-genui-calc-body',
+        children: [
+          jsxs('div', {
+            className: 'hs-genui-slider-wrap',
+            children: [
+              jsx('input', {
+                type: 'range',
+                min, max, step,
+                value: val,
+                onChange: e => setVal(parseFloat(e.target.value)),
+                className: 'hs-genui-slider'
+              }),
+              jsx('span', { className: 'hs-genui-slider-label', children: `${val}${unit}` })
+            ]
+          }),
+          jsxs('div', {
+            className: 'hs-genui-calc-res',
+            children: [
+              jsx('span', { className: 'hs-muted', children: 'Estimated output: ' }),
+              jsx('strong', { children: `${result}${unit}` })
+            ]
+          })
+        ]
+      })
+    ]
+  })
+}
+
+function GenUIExplainer({ attrs, sessionId }) {
+  const title = attrs?.title || 'Explainer'
+  const steps = (attrs?.steps || '').split(';').map(s => s.trim()).filter(Boolean)
+  const [current, setCurrent] = useState(0)
+
+  useEffect(() => {
+    if (sessionId) recordArtifact(sessionId, { id: `explainer-${title}`, kind: 'explainer', title })
+  }, [sessionId, title])
+
+  return jsxs('div', {
+    className: 'hs-genui-card hs-genui-explainer',
+    children: [
+      jsxs('div', {
+        className: 'hs-genui-head',
+        children: [
+          jsx(Codicon, { name: 'mortar-board', size: '14px' }),
+          jsx('span', { className: 'hs-genui-title', children: title })
+        ]
+      }),
+      steps.length > 0 && jsxs('div', {
+        className: 'hs-genui-explainer-body',
+        children: [
+          jsx('p', { className: 'hs-genui-step-text', children: steps[current] }),
+          jsxs('div', {
+            className: 'hs-genui-explainer-nav',
+            children: [
+              jsx(Button, {
+                size: 'xs',
+                variant: 'ghost',
+                disabled: current <= 0,
+                onClick: () => setCurrent(current - 1),
+                children: 'Previous'
+              }),
+              jsx('span', { className: 'hs-muted', children: `${current + 1} / ${steps.length}` }),
+              jsx(Button, {
+                size: 'xs',
+                variant: 'ghost',
+                disabled: current >= steps.length - 1,
+                onClick: () => setCurrent(current + 1),
+                children: 'Next'
+              })
+            ]
+          })
+        ]
+      })
+    ]
+  })
+}
+
 // ── Optional DOM decorators: logos on Hermes' own controls ──────────────────
 // They only set a data attribute and paint with CSS; they never insert nodes
 // into React-owned markup, and everything they set is removed on stop.
@@ -1040,6 +1325,37 @@ const STYLES = `
 .hs-prompt-popover{position:absolute;bottom:100%;right:0;margin-bottom:4px;display:flex;flex-direction:column;gap:1px;padding:4px;background:var(--ui-bg-elevated,var(--ui-bg-input,#202020));border:1px solid var(--ui-stroke-tertiary);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.25);z-index:100;min-width:160px}
 .hs-prompt-item{display:flex;align-items:center;padding:4px 8px;font-size:11px;color:var(--ui-text-primary);background:none;border:0;border-radius:4px;text-align:left;cursor:pointer}
 .hs-prompt-item:hover{background:var(--chrome-action-hover)}
+.hs-genui-card{margin:8px 0;padding:10px;border-radius:8px;border:1px solid var(--ui-stroke-tertiary);background:var(--ui-bg-surface,var(--ui-bg-input,transparent));font-size:12px}
+.hs-genui-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px;font-weight:600;color:var(--ui-text-primary)}
+.hs-genui-title-wrap{display:flex;align-items:center;gap:6px}
+.hs-genui-pin-btn{display:inline-flex;align-items:center;padding:2px 4px;border:0;border-radius:4px;background:none;color:var(--ui-text-tertiary);cursor:pointer}
+.hs-genui-pin-btn:hover,.hs-genui-pin-btn.hs-active{color:var(--ui-accent,currentColor);background:var(--chrome-action-hover)}
+.hs-genui-bars{display:flex;flex-direction:column;gap:6px}
+.hs-genui-bar-row{display:grid;grid-template-columns:80px minmax(0,1fr) 50px;align-items:center;gap:8px}
+.hs-genui-bar-label{color:var(--ui-text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hs-genui-bar-track{height:8px;border-radius:4px;background:var(--ui-stroke-tertiary);overflow:hidden}
+.hs-genui-bar-fill{height:100%;background:var(--ui-accent,#3b82f6);border-radius:4px}
+.hs-genui-bar-val{text-align:right;font-variant-numeric:tabular-nums;color:var(--ui-text-tertiary)}
+.hs-genui-kpi{display:flex;flex-direction:column;gap:4px}
+.hs-genui-kpi-label{font-size:11px;text-transform:uppercase;color:var(--ui-text-tertiary);font-weight:600}
+.hs-genui-kpi-val-row{display:flex;align-items:baseline;gap:8px}
+.hs-genui-kpi-val{font-size:20px;font-weight:700;color:var(--ui-text-primary)}
+.hs-genui-kpi-change{font-size:11px;font-weight:600}
+.hs-genui-kpi-change.hs-pos{color:var(--ui-green,#10b981)}
+.hs-genui-kpi-change.hs-neg{color:var(--ui-red,#ef4444)}
+.hs-genui-table{width:100%;border-collapse:collapse;font-size:11px}
+.hs-genui-th{text-align:left;padding:4px 6px;border-bottom:1px solid var(--ui-stroke-tertiary);color:var(--ui-text-tertiary);cursor:pointer}
+.hs-genui-th:hover{color:var(--ui-text-primary)}
+.hs-genui-table td{padding:4px 6px;border-bottom:1px solid var(--ui-stroke-secondary)}
+.hs-genui-calc-body{display:flex;flex-direction:column;gap:8px}
+.hs-genui-slider-wrap{display:flex;align-items:center;gap:8px}
+.hs-genui-slider{flex:1}
+.hs-genui-slider-label{min-width:40px;font-weight:600;font-variant-numeric:tabular-nums}
+.hs-genui-calc-res{font-size:12px;color:var(--ui-text-primary)}
+.hs-genui-explainer-body{display:flex;flex-direction:column;gap:8px}
+.hs-genui-step-text{margin:0;line-height:1.4}
+.hs-genui-explainer-nav{display:flex;align-items:center;justify-content:space-between}
+.hs-artifact-row{border-bottom:1px dashed var(--ui-stroke-tertiary)}
 `
 
 // ── Plugin ──────────────────────────────────────────────────────────────────
@@ -1052,7 +1368,8 @@ const DEFAULT_PREFS = {
   reasoningSwitch: true,
   scrollOnSwitch: true,
   promptEnhance: true,
-  sessionAppearance: true
+  sessionAppearance: true,
+  genUI: true
 }
 
 export default {
@@ -1203,6 +1520,27 @@ export default {
       }
     })
 
+
+    if (TRANSCRIPT_DIRECTIVE_AREA) {
+      const directives = [
+        { name: 'chart', render: GenUIChart },
+        { name: 'kpi', render: GenUIKpi },
+        { name: 'table', render: GenUITable },
+        { name: 'calc', render: GenUICalculator },
+        { name: 'explainer', render: GenUIExplainer },
+        { name: 'blocks', render: GenUIChart }
+      ]
+      directives.forEach(d => {
+        ctx.register({
+          id: `genui-${d.name}`,
+          area: TRANSCRIPT_DIRECTIVE_AREA,
+          data: {
+            name: d.name,
+            render: props => (prefs.get().genUI ? jsx(d.render, { attrs: props.attrs, sessionId: props.sessionId, streaming: props.streaming }) : null)
+          }
+        })
+      })
+    }
     const decorators = [
       { pref: 'rowLogos', start: startRowDecorator, stop: null },
       { pref: 'pillLogo', start: startPillDecorator, stop: null },
@@ -1269,7 +1607,12 @@ export default {
               checked: p.rowLogos, label: 'Logos on chat tool rows',
               description: 'Replaces the generic icon on tool rows that belong to a known service. Reads the row title, so it can miss a tool Hermes labels differently.',
               onChange: on => update({ rowLogos: on })
-            }, 'rowLogos')
+            }, 'rowLogos'),
+            jsx(ToggleRow, {
+              checked: p.genUI, label: 'Interactive GenUI blocks in chat',
+              description: 'Renders charts, KPI cards, sortable tables, calculators, and explainers directly inside chat responses.',
+              onChange: on => update({ genUI: on })
+            }, 'genUI')
           ]
         })
       }
