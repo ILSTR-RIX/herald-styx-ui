@@ -1,0 +1,31 @@
+name: Usulan fitur
+description: Ide untuk fitur baru atau perbaikan yang sudah ada.
+title: "[Fitur]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Masalah yang ingin diselesaikan
+      description: Apa yang sulit atau tidak bisa dilakukan sekarang?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Usulan solusi
+      description: Bagaimana sebaiknya fitur ini bekerja? Screenshot atau sketsa boleh disertakan.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatif yang sudah dipertimbangkan
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Batasan proyek
+      description: Herald Styx UI sengaja tidak mengubah tema Hermes dan hanya memakai SDK plugin publik.
+      options:
+        - label: Usulan ini tidak mengubah warna atau layout Hermes.
+          required: true

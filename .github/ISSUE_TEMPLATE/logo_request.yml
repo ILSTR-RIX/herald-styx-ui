@@ -1,0 +1,49 @@
+name: Permintaan logo
+description: Minta logo baru untuk model atau service, atau laporkan logo yang salah.
+title: "[Logo]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ingin menambahkannya sendiri? Ikuti [CONTRIBUTING.md](https://github.com/ILSTR-RIX/herald-styx-ui/blob/main/CONTRIBUTING.md); biasanya cukup satu baris di `logos.config.json`.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Jenis
+      options:
+        - Logo model baru
+        - Logo service baru
+        - Logo yang muncul salah atau tidak muncul
+    validations:
+      required: true
+  - type: input
+    id: name
+    attributes:
+      label: Nama model atau service
+      placeholder: "Contoh: Todoist, AI21 Jamba"
+    validations:
+      required: true
+  - type: textarea
+    id: examples
+    attributes:
+      label: Contoh nama yang harus cocok
+      description: Model id, nama tool / MCP server, atau host persis seperti yang terlihat di Hermes.
+      placeholder: |
+        ai21/jamba-1.5-large
+        mcp__todoist__add_task
+        https://todoist.com/app
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Ikon di LobeHub Icons atau Simple Icons
+      description: Nama ikon atau link, jika sudah kamu temukan (lihat CONTRIBUTING.md langkah 2).
+      placeholder: "si:todoist atau lobe:ai21"
+  - type: checkboxes
+    id: pr
+    attributes:
+      label: Kontribusi
+      options:
+        - label: Saya bersedia membuat pull request untuk logo ini.

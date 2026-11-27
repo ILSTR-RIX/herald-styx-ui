@@ -116,7 +116,7 @@ Diperiksa terhadap source Hermes desktop di `/opt/hermes` (SDK `@hermes/plugin-s
 
 ## Berkontribusi
 
-Kontribusi diterima, terutama logo baru. Lihat [CONTRIBUTING.md](CONTRIBUTING.md).
+Kontribusi diterima, terutama logo baru. Lihat [CONTRIBUTING.md](CONTRIBUTING.md). Dengan berpartisipasi, kamu setuju mengikuti [Code of Conduct](CODE_OF_CONDUCT.md). Celah keamanan dilaporkan secara privat sesuai [SECURITY.md](SECURITY.md), bukan lewat issue publik.
 
 ## Changelog
 

@@ -1,0 +1,81 @@
+name: Laporan bug
+description: Sesuatu tidak berjalan sebagaimana mestinya.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Terima kasih sudah melapor. Untuk **celah keamanan**, jangan pakai form ini; lihat [SECURITY.md](https://github.com/ILSTR-RIX/herald-styx-ui/blob/main/SECURITY.md).
+  - type: textarea
+    id: what
+    attributes:
+      label: Apa yang terjadi?
+      description: Jelaskan masalahnya, dan apa yang seharusnya terjadi.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Langkah untuk mereproduksi
+      placeholder: |
+        1. Buka chat dengan model ...
+        2. Jalankan ...
+        3. Lihat ...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Bagian yang bermasalah
+      multiple: true
+      options:
+        - Agent panel
+        - Logo di model menu
+        - Logo di composer model pill
+        - Model chip di status bar
+        - Logo di chat tool rows
+        - Settings
+        - Build (scripts/build.mjs)
+        - Lainnya
+    validations:
+      required: true
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Versi Herald Styx UI
+      description: Baris kedua file `plugin.js` yang terpasang.
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: hermes-version
+    attributes:
+      label: Versi Hermes Desktop
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Sistem operasi
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Screenshot atau log
+      description: Error dari DevTools console (cari `herald` atau `contrib:herald-styx-ui`) sangat membantu.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Sudah dicek
+      options:
+        - label: Masalah masih terjadi setelah **Reload desktop plugins**.
+          required: true
+        - label: Saya sudah mencari issue yang sama dan tidak menemukannya.
+          required: true

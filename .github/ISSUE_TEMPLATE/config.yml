@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Laporkan celah keamanan
+    url: https://github.com/ILSTR-RIX/herald-styx-ui/security/advisories/new
+    about: Laporkan secara privat, jangan lewat issue publik. Lihat SECURITY.md.
+  - name: Panduan menambah logo
+    url: https://github.com/ILSTR-RIX/herald-styx-ui/blob/main/CONTRIBUTING.md
+    about: Langkah lengkap menambah logo sendiri lewat pull request.
