@@ -87,7 +87,7 @@ export function hostLogo(urlOrHost) {
 const FAMILY_ICON = {
   code: 'code', cron: 'watch', delegation: 'organization', files: 'file', memory: 'database',
   search: 'search', skills: 'book', terminal: 'terminal', todo: 'checklist', tools: 'tools',
-  vision: 'eye', web: 'globe'
+  vision: 'eye', web: 'globe', desktop: 'device-desktop', solver: 'shield'
 }
 
 export function familyOf(name) {

@@ -86,6 +86,8 @@
     "todo":       ["todo", "todo_list"],
     "tools":      ["tool_search", "tool_describe", "tool_call"],
     "vision":     ["vision_analyze", "video_analyze", "image_generate"],
-    "cron":       ["cronjob"]
+    "cron":       ["cronjob"],
+    "desktop":    ["desktop_act", "desktop_snapshot", "desktop_find", "desktop_apps", "desktop_window", "desktop_clipboard", "desktop_batch", "desktop_install", "desktop_status"],
+    "solver":     ["solver_get", "solver_cookies", "solver_load", "solver_status", "solver_bridge", "solver_extract", "solver_fetch", "cdp"]
   }
 }
