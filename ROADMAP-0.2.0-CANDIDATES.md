@@ -20,11 +20,11 @@ Sumber: `apoapostolov/hermes-agent-awesome-plugins`
   - **Deskripsi:** Menampilkan kuota tersisa & batas pemakaian per provider AI aktif (DeepSeek, OpenAI/Codex, GLM, Anthropic, Gemini, OpenRouter, dll.). Mendukung rotasi akun otomatis dan timer jam peak/off-peak.
   - **Relevansi Styx:** Bisa dipadukan dengan Model Chip Styx yang sudah ada di status bar.
   - > Catatan:
-- [ ] **1.2. Iteration Budget Meter**
+- [x] **1.2. Iteration Budget Meter**
   - **Deskripsi:** Menghitung akumulasi turn dan tool step secara kumulatif (`12 turns · 181 steps`) saat agent bekerja, lengkap dengan popover rata-rata waktu eksekusi.
   - **Relevansi Styx:** Sangat cocok disematkan di header Agent Panel atau pada status chip Styx.
   - > Catatan:
-- [ ] **1.3. Reasoning Switch**
+- [x] **1.3. Reasoning Switch**
   - **Deskripsi:** Tombol siklus tingkat pemikiran (*reasoning effort*: low, medium, high) langsung dari status bar dengan indikator warna tanpa harus membuka menu Settings.
   - **Relevansi Styx:** Pelengkap kontrol model yang cepat.
   - > Catatan:
@@ -36,11 +36,11 @@ Sumber: `apoapostolov/hermes-agent-awesome-plugins`
 ---
 
 ### 2. Tools & Memory (Alat & Memori)
-- [ ] **2.1. Intelligent Tool Break**
+- [x] **2.1. Intelligent Tool Break**
   - **Deskripsi:** Tombol/strip kontrol di atas composer (`/break`, `/again`, dll.) untuk membatalkan atau menginterupsi tool yang macet/berjalan kelamaan tanpa membatalkan seluruh sesi chat.
   - **Relevansi Styx:** Bisa disematkan langsung di dalam Agent Panel pada baris step yang statusnya sedang `running` terlalu lama.
   - > Catatan:
-- [ ] **2.2. Vercel Agent Desktop Support (Khusus Windows)**
+- [x] **2.2. Vercel Agent Desktop Support (Khusus Windows)**
   - **Deskripsi:** Alat otomasi Windows via UI Accessibility Tree (klik, ketik form, navigasi jendela, clipboard) secara headless tanpa merebut kursor mouse pengguna.
   - **Relevansi Styx:** Memperluas kapabilitas agen untuk berinteraksi dengan aplikasi desktop Windows.
   - > Catatan:
@@ -48,19 +48,19 @@ Sumber: `apoapostolov/hermes-agent-awesome-plugins`
   - **Deskripsi:** Dialog konfirmasi visual untuk meninjau dan menyetujui/menolak fakta memori baru yang ingin dicatat agen sebelum disimpan permanen ke database memori.
   - **Relevansi Styx:** Mirip dengan Approval Card yang sudah didukung Styx.
   - > Catatan:
-- [ ] **2.4. CDP Manager (Chrome DevTools Protocol)**
+- [x] **2.4. CDP Manager (Chrome DevTools Protocol)**
   - **Deskripsi:** Mengelola port CDP browser lokal dari status bar/chat tool untuk otomasi browsing web agen.
   - **Relevansi Styx:** Mempermudah debugging tool scraping web agen.
   - > Catatan:
-- [ ] **2.5. Delegation Nudge**
+- [x] **2.5. Delegation Nudge**
   - **Deskripsi:** Pengingat otomatis untuk model jika turn berjalan terlalu panjang (>10 tool call tanpa delegasi) agar menyarankan pembagian tugas ke sub-agent demi efisiensi biaya.
   - **Relevansi Styx:** Sangat selaras dengan section `Sub-agents` yang ada di Agent Panel Styx.
   - > Catatan:
-- [ ] **2.6. Jev Routing**
+- [x] **2.6. Jev Routing**
   - **Deskripsi:** Router model cerdas per-turn yang otomatis memilih model dan level reasoning paling hemat dan tepat berdasarkan kompleksitas prompt.
   - **Relevansi Styx:** Optimalisasi pemilihan model otomatis.
   - > Catatan:
-- [ ] **2.7. Byparr Tools & MCP**
+- [x] **2.7. Byparr Tools & MCP**
   - **Deskripsi:** Integrasi solver anti-bot/Cloudflare (FlareSolverr) agar agen dapat mengambil halaman web yang terhalang challenge cookie.
   - **Relevansi Styx:** Penguat tool web extraction.
   - > Catatan:
@@ -72,7 +72,7 @@ Sumber: `apoapostolov/hermes-agent-awesome-plugins`
   - **Deskripsi:** Tampilan visual baru untuk halaman Capabilities/Plugins dengan kartu hover pratinjau, artwork besar, dan tombol switch cepat untuk plugin, skill, dan toolset.
   - **Relevansi Styx:** Desain estetik tanpa merusak layout dasar.
   - > Catatan:
-- [ ] **3.2. Better Capabilities**
+- [x] **3.2. Better Capabilities**
   - **Deskripsi:** Fitur manajemen skill lanjutan: hapus skill, export/package skill ke ZIP, eksplorasi isi file skill, dan preset aktif/nonaktif per profil kerja.
   - **Relevansi Styx:** Manajemen alat kerja yang lebih rapi.
   - > Catatan:
@@ -80,7 +80,7 @@ Sumber: `apoapostolov/hermes-agent-awesome-plugins`
 ---
 
 ### 4. Sessions & Sidebar (Tampilan Daftar Sesi)
-- [ ] **4.1. Better Session Appearance**
+- [x] **4.1. Better Session Appearance**
   - **Deskripsi:** Kustomisasi icon dan warna per sesi chat di sidebar (mengganti dot bawaan dengan ikon star, rocket, flame, terminal, dll.) serta pewarnaan otomatis berdasarkan kata kunci judul.
   - **Relevansi Styx:** Mempercantik sidebar tanpa mengubah tema utama.
   - > Catatan:
@@ -92,11 +92,11 @@ Sumber: `apoapostolov/hermes-agent-awesome-plugins`
   - **Deskripsi:** Fitur drag-and-drop di sidebar untuk menyematkan (pin/unpin) sesi chat penting di posisi teratas secara permanen.
   - **Relevansi Styx:** Navigasi chat yang produktif.
   - > Catatan:
-- [ ] **4.4. Session Retitler**
+- [x] **4.4. Session Retitler**
   - **Deskripsi:** Otomatis memperbarui judul percakapan secara cerdas setelah $N$ pesan berdasarkan ringkasan topik terkini (tidak menimpa judul yang dinamai manual).
   - **Relevansi Styx:** Menjaga daftar riwayat chat tetap rapi dan relevan.
   - > Catatan:
-- [ ] **4.5. Scroll on Switch**
+- [x] **4.5. Scroll on Switch**
   - **Deskripsi:** Otomatis melompat ke pesan paling bawah saat berpindah sesi chat tanpa merusak streaming pesan aktif.
   - **Relevansi Styx:** Peningkatan kenyamanan UX kecil namun berdampak besar.
   - > Catatan:
@@ -116,7 +116,7 @@ Sumber: `apoapostolov/hermes-agent-awesome-plugins`
   - **Deskripsi:** Menampilkan tombol saran aksi/pertanyaan lanjutan di bawah jawaban model (`::nextsteps{...}`). Pengguna cukup klik untuk mengirim atau memilih beberapa sekaligus dengan checkbox.
   - **Relevansi Styx:** Bisa diintegrasikan di bawah jawaban chat atau di dalam Agent Panel (bagian Plan/Followup).
   - > Catatan:
-- [ ] **5.4. Prompt Enhance**
+- [x] **5.4. Prompt Enhance**
   - **Deskripsi:** Tombol pustaka template prompt di composer untuk menyempurnakan draf pesan pengguna sebelum dikirim ke agen.
   - **Relevansi Styx:** Asisten penulisan prompt.
   - > Catatan:
@@ -124,7 +124,7 @@ Sumber: `apoapostolov/hermes-agent-awesome-plugins`
 ---
 
 ### 6. Writing, Reading & Posting (Produktivitas Konten)
-- [ ] **6.1. Voice Gate**
+- [x] **6.1. Voice Gate**
   - **Deskripsi:** Filter linter gaya bahasa otomatis untuk menyaring kalimat "AI slop" / klise generik AI (110 pola) sebelum respons dicetak ke layar.
   - **Relevansi Styx:** Peningkatan kualitas jawaban agen.
   - > Catatan:
@@ -143,22 +143,22 @@ Sumber: `apoapostolov/hermes-agent-awesome-plugins`
 Sumber: `sagarmainkar/hermes-genui`
 
 ### 7. Interactive Chat UI Blocks (Komponen Visual di Chat)
-- [ ] **7.1. Visual Charts & Graphs**
+- [x] **7.1. Visual Charts & Graphs**
   - **Deskripsi:** Grafik interaktif kaya (Line dengan pewarnaan gain/loss, Column/Bar, Donut, Pie, Area, Heatmap, Combo) dengan hover tooltip kartu detail.
   - > Catatan:
-- [ ] **7.2. Numbers & KPI Metric Cards**
+- [x] **7.2. Numbers & KPI Metric Cards**
   - **Deskripsi:** Kartu ringkasan metrik statistik (KPI card, sparkline trend mini, target progress bar, streak counter).
   - > Catatan:
-- [ ] **7.3. Interactive Tables & Ranked Lists**
+- [x] **7.3. Interactive Tables & Ranked Lists**
   - **Deskripsi:** Tabel data yang bisa di-sort kolomnya secara dinamis, dilengkapi visual mini-bar di sel angka dan ranked list dengan foto/ikon.
   - > Catatan:
 - [ ] **7.4. Plans, Itineraries & Persistent Checklists**
   - **Deskripsi:** Jadwal perjalanan bertahap (day-by-day stops), kalender harian, dan to-do checklist interaktif yang status centangnya tersimpan permanen di memori sesi.
   - > Catatan:
-- [ ] **7.5. Interactive Controls & Live Calculators**
+- [x] **7.5. Interactive Controls & Live Calculators**
   - **Deskripsi:** Simulasi interaktif kalkulator dengan slider input real-time yang langsung menggerakkan grafik (misal simulasi cicilan, tabungan, ROI), form input dinamis, dan tombol filter.
   - > Catatan:
-- [ ] **7.6. Step-by-Step Explainers & Flow Simulations**
+- [x] **7.6. Step-by-Step Explainers & Flow Simulations**
   - **Deskripsi:** Diagram alur konsep bertahap yang kotaknya dapat diinspeksi langkah demi langkah, simulasi waktu beranimasi, dan model 3D visual.
   - > Catatan:
 - [ ] **7.7. Media Photo Strips**
@@ -190,13 +190,13 @@ Sumber: `sagarmainkar/hermes-genui`
 ---
 
 ### 9. Custom Dashboards & Pinned Sidebar Pages
-- [ ] **9.1. Pembuatan Dasbor dari Tool / MCP Data**
+- [x] **9.1. Pembuatan Dasbor dari Tool / MCP Data**
   - **Deskripsi:** Perintah suara/teks seperti *"Buatkan dashboard sales"* yang otomatis memanggil MCP read-only dan merender grafik + KPI komprehensif.
   - > Catatan:
-- [ ] **9.2. Keep in Sidebar (Pin ke Sidebar)**
+- [x] **9.2. Keep in Sidebar (Pin ke Sidebar)**
   - **Deskripsi:** Tombol satu klik untuk menyematkan dasbor hasil generate menjadi halaman mandiri permanen di sidebar Hermes.
   - > Catatan:
-- [ ] **9.3. Background & Scheduled Auto-Refresh**
+- [x] **9.3. Background & Scheduled Auto-Refresh**
   - **Deskripsi:** Kemampuan me-refresh data dasbor secara otomatis atau terjadwal (misal setiap pagi jam 8) dengan mengulang query read-only yang sama.
   - > Catatan:
 
