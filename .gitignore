@@ -1,0 +1,33 @@
+# dist/plugin.js is committed on purpose: it is the file users install.
+
+# Dependencies (test only, installed with npm i --no-save)
+node_modules/
+
+# Build cache: downloaded logo SVGs
+.cache/
+
+# Test harness scratch files
+test/.bundle.mjs
+test/.sdk-mock.mjs
+test/.sdk-browser.mjs
+test/.visual*
+
+# Logs
+*.log
+npm-debug.log*
+
+# Secrets and local environment
+.env
+.env.*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
