@@ -1,11 +1,13 @@
 # Herald Styx UI
 
-Plugin Hermes Desktop dengan dua fitur ala Monograph, tanpa mengubah tema:
-
 1. **Logo model dan service**: di model menu, di model pill pada composer tiap chat (di samping nama model), sebagai model chip di status bar, dan di tool row pada chat.
-2. **Agent panel**: pane di sisi kanan yang mengikuti chat yang sedang fokus dan menampilkan step, plan (todo), sources, sub-agent, serta approval yang sedang menunggu dari turn yang berjalan.
+2. **Agent panel & observabilitas kerja**: pane kanan mengikuti chat aktif, menampilkan durasi & iteration meter (`N turns · M steps`), plan (todo), visual artifacts, sources, sub-agent, serta approval.
+3. **Intelligent Tool Break & Stalled Indicator**: tombol interupsi darurat langsung pada baris step yang sedang `running` atau macet.
+4. **Interactive GenUI**: merender grafik bar SVG responsif, KPI metric cards, sortable tables, live calculators dengan slider dinamis, dan step-by-step explainers langsung di dalam chat.
+5. **Kontrol status bar & composer**: tombol ganti *reasoning effort* instan di status bar kanan, serta template *Prompt Enhance* di composer chat.
+6. **Kustomisasi sesi & navigasi**: pewarnaan tag sesi di sidebar (`SESSION_ROW_AREAS`) dan *scroll-on-switch* otomatis ke pesan terbaru.
 
-Plugin ini tidak mengubah warna atau layout, jadi skin default, Monograph, atau tema lain tetap seperti semula.
+Plugin ini tidak mengubah warna atau layout dasar, jadi skin default, Monograph, atau tema lain tetap konsisten.
 
 ## Preview
 
@@ -14,17 +16,21 @@ Semua gambar ada di folder [`preview/`](preview). Gambar dirender dari `dist/plu
 <p align="center">
   <img src="preview/agent-panel.png" alt="Agent panel: approval, plan, sources, sub-agent, dan step" width="360">
 </p>
-
 | Composer model pill | Model menu |
 |---|---|
 | ![Logo model di samping nama model pada composer](preview/composer-model-pill.png) | ![Logo di model menu](preview/model-menu.png) |
 
-| Chat tool rows | Status bar chip |
+| Chat tool rows | Status bar controls (Model & Reasoning) |
 |---|---|
-| ![Logo service di tool row chat](preview/chat-tool-rows.png) | ![Model chip di status bar](preview/statusbar-chip.png) |
+| ![Logo service di tool row chat](preview/chat-tool-rows.png) | ![Status bar controls](preview/statusbar-controls.png) |
 
-![Halaman Settings Herald Styx UI](preview/settings.png)
+| Interactive GenUI Blocks in Chat | Composer Prompt Enhance |
+|---|---|
+| ![Interactive GenUI Blocks](preview/genui-blocks.png) | ![Composer Prompt Enhance](preview/composer-enhance.png) |
 
+| Session Color Tags (Sidebar) | Settings Herald Styx UI v0.2.0 |
+|---|---|
+| ![Session Appearance](preview/session-appearance.png) | ![Halaman Settings Herald Styx UI](preview/settings.png) |
 ## Install
 
 Plugin ini hanya satu file: `dist/plugin.js`. Node tidak diperlukan untuk memasangnya.

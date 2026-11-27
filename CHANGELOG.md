@@ -6,6 +6,8 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.1.0/), da
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-28
+
 ### Added
 
 - **Iteration Budget Meter**: akumulasi jumlah turn dan step dihitung per sesi (`N turns · M steps`), ditampilkan pada header Agent Panel dan tooltip model chip di status bar.
@@ -53,5 +55,6 @@ Rilis pertama. Plugin Hermes Desktop untuk logo model dan service, serta agent p
 
 - Nama plugin diganti dari **Agent Lens** menjadi **Herald Styx UI**, dengan id dan folder `herald-styx-ui`. Pengaturan lama di `hermes.plugin.agent-lens.*` tidak ikut pindah; hapus folder `desktop-plugins/agent-lens` supaya plugin tidak termuat dua kali.
 
-[Unreleased]: https://github.com/ILSTR-RIX/herald-styx-ui/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/ILSTR-RIX/herald-styx-ui/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/ILSTR-RIX/herald-styx-ui/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ILSTR-RIX/herald-styx-ui/releases/tag/v0.1.0

@@ -1,5 +1,5 @@
 /**
- * Herald Styx UI 0.1.0: model/service logos and a live agent panel for Hermes Desktop.
+ * Herald Styx UI 0.2.0: model/service logos, live agent panel, and interactive GenUI for Hermes Desktop.
  * https://github.com/ILSTR-RIX/herald-styx-ui (MIT, provided AS IS without warranty)
  *
  * Built file. Edit src/plugin.js and logos.config.json, then run
